@@ -6,7 +6,7 @@ from blocking_py.method_mlpack import method_mlpack
 
 @pytest.fixture
 def control_params():
-    """Fixture for control parameters used by both algorithms."""
+   
     return {
         'k_search': 3,
         'lsh': {
@@ -29,13 +29,13 @@ def control_params():
 
 @pytest.fixture
 def data():
-    """Fixture for reference and query data."""
+   
     reference_data = np.random.rand(10, 5)
     query_data = np.random.rand(5, 5) 
     return reference_data, query_data
 
 def test_lsh_method(data, control_params):
-    """Test LSH algorithm with valid inputs."""
+  
     reference_data, query_data = data
     result = method_mlpack(
         x=reference_data,
@@ -53,7 +53,7 @@ def test_lsh_method(data, control_params):
     assert 'dist' in result.columns, "Result should contain 'dist' column."
 
 def test_knn_method(data, control_params):
-    """Test KD-tree algorithm with valid inputs."""
+    
     reference_data, query_data = data
     result = method_mlpack(
         x=reference_data,
@@ -71,7 +71,7 @@ def test_knn_method(data, control_params):
     assert 'dist' in result.columns, "Result should contain 'dist' column."
 
 def test_invalid_algorithm(data, control_params):
-    """Test with an invalid algorithm input."""
+
     reference_data, query_data = data
     
     with pytest.raises(ValueError, match="Incorrect algorithm specified"):
@@ -87,7 +87,7 @@ def test_invalid_algorithm(data, control_params):
         )
 
 def test_sparse_matrix_input(control_params):
-    """Test with sparse matrix inputs."""
+
     reference_data = csr_matrix(np.random.rand(10, 5))
     query_data = csr_matrix(np.random.rand(5, 5))     
 
@@ -107,7 +107,6 @@ def test_sparse_matrix_input(control_params):
     assert 'dist' in result.columns, "Result should contain 'dist' column."
 
 def test_correct_neighbors_and_distances():
-    """Test if neighbors and distances are correct."""
     
     reference_data = np.array([
         [1.0, 2.0],
