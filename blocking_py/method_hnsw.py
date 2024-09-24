@@ -50,6 +50,8 @@ def method_hnsw(x, y, k, distance, verbose, n_threads, path, control):
 
     return l_df
 
+### EXAMPLE USAGE
+
 # x = np.random.rand(1000, 50)
 # y = np.random.rand(100, 50)
 # control = {

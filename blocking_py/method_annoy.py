@@ -95,6 +95,8 @@ def method_annoy(x, y, k, distance, verbose, path, seed, control):
         print("Process completed successfully.")
     return l_df
 
+### EXAMPLE USAGE
+
 # control = {
 #     'annoy': {
 #         'build_on_disk': False,

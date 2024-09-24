@@ -46,6 +46,7 @@ def method_mlpack(x, y, algo, k, verbose, seed, path, control):
     
     return l_df
 
+### EXAMPLE USAGE
 
 # from scipy.sparse import csr_matrix
 # reference_data = np.random.rand(10, 5)  
