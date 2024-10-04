@@ -6,6 +6,8 @@ import os
 import platform
 import text2vec
 from tokenizers import tokenize_character_shingles
+import networkx as nx
+from collections import OrderedDict
 
 from blocking_py import method_nnd, method_annoy, method_hnsw, method_mlpack
 
@@ -204,10 +206,23 @@ def blocking(x,
         x_df['query_g'] = 'q' + x_df['y'].astype(str)
         x_df['index_g'] = 'i' + x_df['x'].astype(str)
     
+    ### IGRAPH PART IN R
+    x_gr = nx.from_pandas_edgelist(x_df, source='query_g', target='index_g', create_using=nx.Graph())
+    components = nx.connected_components(x_gr)
+    x_block = {}
+    for component_id, component in enumerate(components):
+        for node in component:
+            x_block[node] = component_id
 
+    unique_query_g = x_df['query_g'].unique()
+    unique_index_g = x_df['index_g'].unique()
+    combined_keys = list(unique_query_g) + [node for node in unique_index_g if node not in unique_query_g]
 
+    sorted_dict = OrderedDict()
+    for key in combined_keys:
+        if key in x_block:
+            sorted_dict[key] = x_block[key]
 
-import igraph
-igraph._construct_graph_from_dataframe
-#https://python.igraph.org/en/stable/faq.html
+    x_df['block'] = x_df['query_g'].apply(lambda x: x_block[x] if x in x_block else None)
+    ###
 
