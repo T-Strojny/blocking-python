@@ -11,6 +11,9 @@ from collections import OrderedDict
 
 from blocking_py import method_nnd, method_annoy, method_hnsw, method_mlpack
 
+def rleid(df_col):
+    return (df_col != df_col.shift()).cumsum()
+
 def blocking(x,
              y: Optional[Union[np.ndarray, List]] = None,
              deduplication: bool = True,
@@ -226,3 +229,51 @@ def blocking(x,
     x_df['block'] = x_df['query_g'].apply(lambda x: x_block[x] if x in x_block else None)
     ###
 
+    if true_blocks is not None:
+        if not deduplication:
+            pairs_to_eval = x_df[x_df['y'].isin(true_blocks['y'])][['x','y','block']]
+            pairs_to_eval = pairs_to_eval.merge(true_blocks[['x','y']],
+                                                on=['x','y'],
+                                                how='left',
+                                                indicator='both')
+            pairs_to_eval['both'] = np.where(pairs_to_eval['both'] == 'both',0,-1)
+
+            true_blocks = true_blocks.merge(pairs_to_eval[['x', 'y']], 
+                                            on=['x', 'y'], 
+                                            how='left', 
+                                            indicator='both')
+            true_blocks['both'] = np.where(true_blocks['both'] == 'both', 0, 1)
+            true_blocks['block'] = true_blocks['block'] + pairs_to_eval['block'].max()
+
+            to_concat = true_blocks[true_blocks['both'] == 1][['x', 'y', 'block', 'both']]
+            pairs_to_eval = pd.concat([pairs_to_eval, to_concat], ignore_index=True)
+            pairs_to_eval['row_id'] = range(len(pairs_to_eval))
+            pairs_to_eval['x2'] = pairs_to_eval['x'] + pairs_to_eval['y'].max()
+
+            pairs_to_eval_long = pd.melt(pairs_to_eval[['y', 'x2', 'row_id', 'block', 'both']],
+                                        id_vars=['row_id', 'block', 'both'],
+                                        )
+            pairs_to_eval_long = pairs_to_eval_long[pairs_to_eval_long['both'] == 0]
+            pairs_to_eval_long['block_id'] = pairs_to_eval_long.groupby('block').ngroup()
+            pairs_to_eval_long['true_id'] = pairs_to_eval_long['block_id']
+
+            block_id_max = pairs_to_eval_long['block_id'].max(skipna=True)
+            pairs_to_eval_long.loc[pairs_to_eval_long['both'] == -1, 'block_id'] = block_id_max + pairs_to_eval_long.groupby('row_id').ngroup() + 1 
+            block_id_max = pairs_to_eval_long['block_id'].max(skipna=True)
+            # recreating R's rleid function
+            pairs_to_eval_long['rleid'] = (pairs_to_eval_long['row_id'] != pairs_to_eval_long['row_id'].shift(1)).cumsum()
+            pairs_to_eval_long.loc[(pairs_to_eval_long['both'] == 1) & (pairs_to_eval_long['block_id'].isna()), 'block_id'] = block_id_max + pairs_to_eval_long['rleid']
+
+            true_id_max = pairs_to_eval_long['true_id'].max(skipna=True)
+            pairs_to_eval_long.loc[pairs_to_eval_long['both'] == 1, 'true_id'] = true_id_max + pairs_to_eval_long.groupby('row_id').ngroup() + 1
+            true_id_max = pairs_to_eval_long['treu_id'].max(skipna=True)
+            # recreating R's rleid function again
+            pairs_to_eval_long['rleid'] = (pairs_to_eval_long['row_id'] != pairs_to_eval_long['row_id'].shift(1)).cumsum()
+            pairs_to_eval_long.loc[(pairs_to_eval_long['both'] == -1) & (pairs_to_eval_long['true_id'].isna()), 'true_id'] = true_id_max + pairs_to_eval_long['rleid']
+
+            pairs_to_eval_long.drop('rleid', inplace=True)
+
+        else:
+            #pairs_to_eval_long <- melt(x_df[, .(x,y,block)], id.vars = c("block"))
+            #pairs_to_eval_long <- unique(pairs_to_eval_long[, .(block_id=block, x=value)])
+            #pairs_to_eval_long[true_blocks, on = "x", true_id := i.block]
