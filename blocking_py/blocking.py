@@ -11,8 +11,7 @@ from collections import OrderedDict
 
 from blocking_py import method_nnd, method_annoy, method_hnsw, method_mlpack
 
-def rleid(df_col):
-    return (df_col != df_col.shift()).cumsum()
+
 
 def blocking(x,
              y: Optional[Union[np.ndarray, List]] = None,
